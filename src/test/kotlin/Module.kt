@@ -13,10 +13,16 @@ fun String.decodeHex(): ByteArray {
 }
 
 class ModuleTest : FunSpec({
+    test("decodeHex") {
+        val bytes = "00 61 73 6d 01 00 00 00".decodeHex()
+        bytes shouldBe byteArrayOf(0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00)
+    }
+
     context("load") {
-        test("decodeHex") {
-            val bytes = "00 61 73 6d 01 00 00 00".decodeHex()
-            bytes shouldBe byteArrayOf(0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00)
+        test("empty") {
+            val data = "00 61 73 6d 01 00 00 00".decodeHex()
+            val actual = Module.loadFrom(data)
+            actual shouldBe Module(emptyList(), emptyList())
         }
     }
 })
