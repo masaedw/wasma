@@ -23,10 +23,9 @@ class ModuleLoader(
     private fun read(): Int {
         val n = readOrEof()
         if (n == -1) throw EOFException("pos: $pos")
+        // TODO: https://en.wikipedia.org/wiki/LEB128 を読むようにする
         return n
     }
-
-    private fun readUByte(): UByte = read().toUByte()
 
     private fun readString(): String {
         val size = read()
@@ -57,8 +56,8 @@ class ModuleLoader(
     }
 
     private fun loadTypeSection() {
-        val size = readUByte()
-        skip(size.toInt())
+        val size = read()
+        skip(size)
         // TODO: Not yet implemented
     }
 
@@ -69,7 +68,7 @@ class ModuleLoader(
     }
 
     private fun loadExportSection() {
-        val size = readUByte()
+        val size = read()
         val numExports = read()
         exports = buildList {
             for (i in 0 until numExports) {
