@@ -1,9 +1,16 @@
-enum class ImportExportKind {
-    FUNCTION,
-    TABLE,
-    MEMORY,
-    GLOBAL,
+enum class ImportExportKind(val code: Int) {
+    FUNCTION(0),
+    TABLE(1),
+    MEMORY(2),
+    GLOBAL(3),
     ;
+
+    companion object {
+        fun fromCode(code: Int): ImportExportKind {
+            return values().firstOrNull { it.code == code }
+                ?: throw UnknownKindException("unknown kind: $code")
+        }
+    }
 }
 
 data class ModuleExportDescriptor(
@@ -17,13 +24,17 @@ data class ModuleImportDescriptor(
     val kind: ImportExportKind,
 )
 
-data class Module(
+class Module internal constructor(
     val exports: List<ModuleExportDescriptor>,
     val imports: List<ModuleImportDescriptor>,
-) {
-    companion object {
-        fun loadFrom(buffer: ByteArray): Module {
-            return Module(emptyList(), emptyList())
-        }
-    }
-}
+)
+
+class UnsupportedSectionException(
+    override val message: String? = null,
+    override val cause: Throwable? = null,
+) : RuntimeException(message, cause)
+
+class UnknownKindException(
+    override val message: String? = null,
+    override val cause: Throwable? = null,
+) : RuntimeException(message, cause)
