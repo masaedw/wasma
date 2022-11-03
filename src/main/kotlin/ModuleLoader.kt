@@ -46,10 +46,10 @@ class ModuleLoader(
 
         while (true) {
             when (readOrEof()) {
-                1 -> loadTypeSection()
-                3 -> loadFunctionSection()
-                7 -> loadExportSection()
-                10 -> loadCodeSection()
+                1 -> types = readTypeSection()
+                3 -> functionTypes = readFunctionSection()
+                7 -> exports = readExportSection()
+                10 -> functions = readCodeSection()
                 -1 -> break
                 else -> throw UnsupportedSectionException()
             }
@@ -77,22 +77,20 @@ class ModuleLoader(
         }
     }
 
-    private fun loadTypeSection() {
-        val size = read()
-        types = List(read()) { readType() }
+    private fun readTypeSection(): List<Type> {
+        read() // skip size
+        return List(read()) { readType() }
     }
 
-    private fun loadFunctionSection() {
-        val size = read()
+    private fun readFunctionSection(): List<Type.Function> {
+        read() // skip size
         val types = types ?: throw InvalidFormatException("missing type section")
-        functionTypes = List(read()) {
-            types[read()] as Type.Function
-        }
+        return List(read()) { types[read()] as Type.Function }
     }
 
-    private fun loadExportSection() {
-        val size = read()
-        exports = List(read()) {
+    private fun readExportSection(): List<ModuleExportDescriptor> {
+        read() // skip size
+        return List(read()) {
             val name = readString()
             val kind = ImportExportKind.fromCode(read())
             val index = read()
@@ -100,19 +98,11 @@ class ModuleLoader(
         }
     }
 
-    private fun loadCodeSection() {
-        val size = read()
+    private fun readCodeSection(): List<Function> {
+        read() // skip size
         val functionTypes = functionTypes ?: throw InvalidFormatException("missing function section")
-
-        functions = List(read()) {
-            val bodySize = read()
-
-            val body = IntArray(bodySize)
-
-            for (j in 0 until bodySize) {
-                body[j] = read()
-            }
-
+        return List(read()) {
+            val body = IntArray(read()) { read() }
             Function(body, functionTypes[it])
         }
     }
