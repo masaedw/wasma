@@ -15,6 +15,19 @@ enum class ImportExportKind(val code: Int) {
     }
 }
 
+enum class GlobalMutability(val code: Int) {
+    IMMUTABLE(0),
+    MUTABLE(1),
+    ;
+
+    companion object {
+        fun fromCode(code: Int): GlobalMutability {
+            return values().firstOrNull() { it.code == code }
+                ?: throw InvalidFormatException("unknown mutability: $code")
+        }
+    }
+}
+
 data class ModuleExportDescriptor(
     val name: String,
     val kind: ImportExportKind,
@@ -26,6 +39,7 @@ data class ModuleImportDescriptor(
     val name: String,
     val kind: ImportExportKind,
     val type: Type,
+    val mutability: GlobalMutability,
 )
 
 class Module(

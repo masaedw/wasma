@@ -41,7 +41,29 @@ class LoaderTest : FunSpec({
             actual.imports[0] shouldBe ModuleImportDescriptor(
                 "console", "log", ImportExportKind.FUNCTION, Type.Function(
                     listOf(Type.I32), listOf()
-                )
+                ), GlobalMutability.IMMUTABLE
+            )
+        }
+
+        test("import global") {
+            val data = """
+                00000000  00 61 73 6d 01 00 00 00  01 08 02 60 00 01 7f 60  |.asm.......`...`|
+                00000010  00 00 02 0e 01 02 6a 73  06 67 6c 6f 62 61 6c 03  |......js.global.|
+                00000020  7f 01 03 03 02 00 01 07  19 02 09 67 65 74 47 6c  |...........getGl|
+                00000030  6f 62 61 6c 00 00 09 69  6e 63 47 6c 6f 62 61 6c  |obal...incGlobal|
+                00000040  00 01 0a 10 02 04 00 23  00 0b 09 00 23 00 41 01  |.......#....#.A.|
+                00000050  6a 24 00 0b                                       |j${'$'}..|
+            """.decodeHexdump()
+
+            val actual = Loader.load(data)
+
+            actual.imports shouldHaveSize 1
+            actual.imports[0] shouldBe ModuleImportDescriptor(
+                "js",
+                "global",
+                ImportExportKind.GLOBAL,
+                Type.I32,
+                GlobalMutability.MUTABLE
             )
         }
 

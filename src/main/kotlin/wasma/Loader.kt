@@ -92,8 +92,29 @@ class Loader(
         return List(read()) { readType() }
     }
 
-    private fun readImport() =
-        ModuleImportDescriptor(readString(), readString(), readKind(), getType(read()))
+    private fun readMutability() = GlobalMutability.fromCode(read())
+
+    private fun readImport(): ModuleImportDescriptor {
+        val module = readString()
+        val name = readString()
+
+        return when (val kind = readKind()) {
+            ImportExportKind.FUNCTION -> {
+                val type = getType(read())
+                ModuleImportDescriptor(module, name, kind, type, GlobalMutability.IMMUTABLE)
+            }
+
+            ImportExportKind.GLOBAL -> {
+                val type = readType()
+                val mutability = readMutability()
+                ModuleImportDescriptor(module, name, kind, type, mutability)
+            }
+
+            ImportExportKind.MEMORY,
+            ImportExportKind.TABLE,
+            -> TODO()
+        }
+    }
 
 
     private fun readImportSection(): List<ModuleImportDescriptor> {
