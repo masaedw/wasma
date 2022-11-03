@@ -88,10 +88,13 @@ class Vm(
                 // local.get
                 0x20 -> push(getLocal(next()))
 
+                // i32.const
+                0x41 -> pushI(next())
+
                 // i32.add
                 0x6a -> pushI(popI() + popI())
 
-                else -> throw UnsupportedOperationException("unknown insn: $insn")
+                else -> throw UnsupportedOperationException("unknown insn: 0x${insn.toString(16)}")
             }
         }
     }

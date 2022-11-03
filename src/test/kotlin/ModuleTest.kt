@@ -2,17 +2,6 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 
-/**
- * convert hex string separated by space to UByteArray
- */
-fun String.decodeHex(): ByteArray {
-    val dense = Regex("\\s+").replace(this, "")
-
-    return ByteArray(dense.length / 2) {
-        Integer.parseInt(dense, it * 2, (it + 1) * 2, 16).toByte()
-    }
-}
-
 class ModuleTest : FunSpec({
     test("decodeHex") {
         val bytes = "00 61 73 6d 01 00 00 00".decodeHex()
