@@ -51,6 +51,9 @@ class ModuleTest : FunSpec({
         test("multiple functions") {
             val actual = ModuleLoader.load(getAnswerPlus1)
 
+            actual.exports shouldHaveSize 1
+            actual.exports[0] shouldBe ModuleExportDescriptor("getAnswerPlus1", ImportExportKind.FUNCTION, 1)
+
             actual.functions shouldHaveSize 2
             actual.functions[1].body shouldBe intArrayOf(0x00, 0x10, 0x00, 0x41, 0x01, 0x6a, 0x0b)
         }
