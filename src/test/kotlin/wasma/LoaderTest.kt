@@ -4,7 +4,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 
-class ModuleTest : FunSpec({
+class LoaderTest : FunSpec({
     test("decodeHex") {
         val bytes = "00 61 73 6d 01 00 00 00".decodeHex()
         bytes shouldBe byteArrayOf(0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00)
@@ -25,6 +25,24 @@ class ModuleTest : FunSpec({
 
             actual.imports shouldBe emptyList()
             actual.exports shouldBe emptyList()
+        }
+
+        test("import") {
+            val data = """
+                00000000  00 61 73 6d 01 00 00 00  01 08 02 60 01 7f 00 60  |.asm.......`...`|
+                00000010  00 00 02 0f 01 07 63 6f  6e 73 6f 6c 65 03 6c 6f  |......console.lo|
+                00000020  67 00 00 03 02 01 01 07  09 01 05 6c 6f 67 49 74  |g..........logIt|
+                00000030  00 01 0a 08 01 06 00 41  0d 10 00 0b              |.......A....|
+            """.decodeHexdump()
+
+            val actual = Loader.load(data)
+
+            actual.imports shouldHaveSize 1
+            actual.imports[0] shouldBe ModuleImportDescriptor(
+                "console", "log", ImportExportKind.FUNCTION, Type.Function(
+                    listOf(Type.I32), listOf()
+                )
+            )
         }
 
         test("export") {

@@ -25,6 +25,7 @@ data class ModuleImportDescriptor(
     val module: String,
     val name: String,
     val kind: ImportExportKind,
+    val type: Type,
 )
 
 class Module(

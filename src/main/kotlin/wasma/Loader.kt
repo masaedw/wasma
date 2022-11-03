@@ -14,6 +14,11 @@ class Loader(
 
     private var pos = 0
 
+    private fun getType(i: Int): Type {
+        val types = types ?: throw InvalidFormatException("missing type section")
+        return types[i]
+    }
+
     private fun skip(n: Int) {
         pos += n
     }
@@ -49,6 +54,7 @@ class Loader(
         while (true) {
             when (val section = readOrEof()) {
                 1 -> types = readTypeSection()
+                2 -> imports = readImportSection()
                 3 -> functionTypes = readFunctionSection()
                 7 -> exports = readExportSection()
                 10 -> functions = readCodeSection()
@@ -64,6 +70,8 @@ class Loader(
             functions ?: emptyList(),
         )
     }
+
+    private fun readKind() = ImportExportKind.fromCode(read())
 
     private fun readType(): Type {
         return when (val type = read()) {
@@ -84,20 +92,26 @@ class Loader(
         return List(read()) { readType() }
     }
 
+    private fun readImport() =
+        ModuleImportDescriptor(readString(), readString(), readKind(), getType(read()))
+
+
+    private fun readImportSection(): List<ModuleImportDescriptor> {
+        read() // skip size
+        return List(read()) { readImport() }
+    }
+
     private fun readFunctionSection(): List<Type.Function> {
         read() // skip size
-        val types = types ?: throw InvalidFormatException("missing type section")
-        return List(read()) { types[read()] as Type.Function }
+        return List(read()) { getType(read()) as Type.Function }
     }
+
+    private fun readExport() =
+        ModuleExportDescriptor(readString(), readKind(), read())
 
     private fun readExportSection(): List<ModuleExportDescriptor> {
         read() // skip size
-        return List(read()) {
-            val name = readString()
-            val kind = ImportExportKind.fromCode(read())
-            val index = read()
-            ModuleExportDescriptor(name, kind, index)
-        }
+        return List(read()) { readExport() }
     }
 
     private fun readCodeSection(): List<Function> {
