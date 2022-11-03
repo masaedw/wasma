@@ -1,6 +1,6 @@
 package wasma
 
-class Vm(
+class Instance(
     private val m: Module,
 ) {
     val stack: LongArray = LongArray(1000)

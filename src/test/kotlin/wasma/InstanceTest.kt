@@ -3,7 +3,7 @@ package wasma
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
-class VmTest : FunSpec({
+class InstanceTest : FunSpec({
     test("execute") {
         // add.wasm
         val data = """
@@ -13,7 +13,7 @@ class VmTest : FunSpec({
             """.decodeHex()
 
         val m = Loader.load(data)
-        val target = Vm(m)
+        val target = Instance(m)
 
         target.execute(0, longArrayOf(3, 5))
 
@@ -30,7 +30,7 @@ class VmTest : FunSpec({
         """.decodeHexdump()
 
         val m = Loader.load(data)
-        val target = Vm(m)
+        val target = Instance(m)
 
         target.execute(1, longArrayOf())
         target.stack[0] shouldBe 43
