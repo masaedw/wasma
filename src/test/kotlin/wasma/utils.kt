@@ -1,3 +1,5 @@
+package wasma
+
 /**
  * convert hex string separated by space to UByteArray
  */

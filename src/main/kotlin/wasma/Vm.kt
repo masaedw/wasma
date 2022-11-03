@@ -1,3 +1,5 @@
+package wasma
+
 class Vm(
     private val m: Module,
 ) {

@@ -1,3 +1,5 @@
+package wasma
+
 class Function(
     val body: IntArray,
     val type: Type.Function,

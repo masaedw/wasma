@@ -1,3 +1,5 @@
+package wasma
+
 enum class ImportExportKind(val code: Int) {
     FUNCTION(0),
     TABLE(1),

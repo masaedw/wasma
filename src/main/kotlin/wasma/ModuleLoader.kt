@@ -1,3 +1,5 @@
+package wasma
+
 import java.io.EOFException
 import java.io.IOException
 

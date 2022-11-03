@@ -1,3 +1,5 @@
+package wasma
+
 sealed class Type {
     object I32 : Type()
     object I64 : Type()
