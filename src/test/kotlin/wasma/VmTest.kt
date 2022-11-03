@@ -12,7 +12,7 @@ class VmTest : FunSpec({
                 01 07 00 20 00 20 01 6a  0b
             """.decodeHex()
 
-        val m = ModuleLoader.load(data)
+        val m = Loader.load(data)
         val target = Vm(m)
 
         target.execute(0, longArrayOf(3, 5))
@@ -29,7 +29,7 @@ class VmTest : FunSpec({
             00000030  07 00 10 00 41 01 6a 0b                           |....A.j.|
         """.decodeHexdump()
 
-        val m = ModuleLoader.load(data)
+        val m = Loader.load(data)
         val target = Vm(m)
 
         target.execute(1, longArrayOf())

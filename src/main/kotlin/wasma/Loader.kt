@@ -3,7 +3,7 @@ package wasma
 import java.io.EOFException
 import java.io.IOException
 
-class ModuleLoader(
+class Loader(
     private val buffer: ByteArray,
 ) {
     private var exports: List<ModuleExportDescriptor>? = null
@@ -111,7 +111,7 @@ class ModuleLoader(
 
     companion object {
         fun load(buffer: ByteArray): Module {
-            return ModuleLoader(buffer).load()
+            return Loader(buffer).load()
         }
     }
 }

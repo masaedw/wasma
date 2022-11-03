@@ -21,7 +21,7 @@ class ModuleTest : FunSpec({
         test("empty") {
             val data = "00 61 73 6d 01 00 00 00".decodeHex()
 
-            val actual = ModuleLoader.load(data)
+            val actual = Loader.load(data)
 
             actual.imports shouldBe emptyList()
             actual.exports shouldBe emptyList()
@@ -35,7 +35,7 @@ class ModuleTest : FunSpec({
                 01 07 00 20 00 20 01 6a  0b
             """.decodeHex()
 
-            val actual = ModuleLoader.load(data)
+            val actual = Loader.load(data)
 
             actual.imports shouldBe emptyList()
             actual.exports shouldBe listOf(ModuleExportDescriptor("add", ImportExportKind.FUNCTION, 0))
@@ -51,7 +51,7 @@ class ModuleTest : FunSpec({
             """.decodeHex()
 
         test("multiple functions") {
-            val actual = ModuleLoader.load(getAnswerPlus1)
+            val actual = Loader.load(getAnswerPlus1)
 
             actual.exports shouldHaveSize 1
             actual.exports[0] shouldBe ModuleExportDescriptor("getAnswerPlus1", ImportExportKind.FUNCTION, 1)
@@ -61,7 +61,7 @@ class ModuleTest : FunSpec({
         }
 
         test("function types") {
-            val actual = ModuleLoader.load(getAnswerPlus1)
+            val actual = Loader.load(getAnswerPlus1)
 
             actual.functions[1].type shouldBe Type.Function(listOf(), listOf(Type.I32))
             actual.functions[1].numLocals shouldBe 0
