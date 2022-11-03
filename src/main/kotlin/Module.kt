@@ -27,6 +27,7 @@ data class ModuleImportDescriptor(
 class Module internal constructor(
     val exports: List<ModuleExportDescriptor>,
     val imports: List<ModuleImportDescriptor>,
+    val functions: List<Function>,
 )
 
 class UnsupportedSectionException(

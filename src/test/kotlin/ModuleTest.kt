@@ -36,6 +36,7 @@ class ModuleTest : FunSpec({
         }
 
         test("export") {
+            // add.wasm
             val data = """
                 00 61 73 6d 01 00 00 00  01 07 01 60 02 7f 7f 01
                 7f 03 02 01 00 07 07 01  03 61 64 64 00 00 0a 09
@@ -46,6 +47,7 @@ class ModuleTest : FunSpec({
 
             actual.imports shouldBe emptyList()
             actual.exports shouldBe listOf(ModuleExportDescriptor("add", ImportExportKind.FUNCTION))
+            actual.functions.map { it.body } shouldBe listOf(intArrayOf(0x00, 0x20, 0x00, 0x20, 0x01, 0x6a, 0x0b))
         }
     }
 })

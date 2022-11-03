@@ -6,6 +6,7 @@ class ModuleLoader(
 ) {
     private var exports: List<ModuleExportDescriptor>? = null
     private var imports: List<ModuleImportDescriptor>? = null
+    private var functions: List<Function>? = null
 
     private var pos = 0
 
@@ -52,7 +53,11 @@ class ModuleLoader(
             }
         }
 
-        return Module(exports ?: emptyList(), imports ?: emptyList())
+        return Module(
+            exports ?: emptyList(),
+            imports ?: emptyList(),
+            functions ?: emptyList()
+        )
     }
 
     private fun loadTypeSection() {
@@ -82,7 +87,20 @@ class ModuleLoader(
 
     private fun loadCodeSection() {
         val size = read()
-        skip(size)
+        val numCodes = read()
+        functions = buildList {
+            for (i in 0 until numCodes) {
+                val bodySize = read()
+
+                val body = IntArray(bodySize)
+
+                for (j in 0 until bodySize) {
+                    body[j] = read()
+                }
+
+                add(Function(body))
+            }
+        }
         // TODO: Not yet implemented
     }
 
