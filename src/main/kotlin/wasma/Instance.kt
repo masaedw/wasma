@@ -6,10 +6,10 @@ class Instance(
     val stack: LongArray = LongArray(1000)
 
     // registers
-    var fi: Int = 0 // function index
-    var sp: Int = 0 // stack pointer
-    var fp: Int = 0 // frame pointer
-    var pc: Int = 0 // program counter
+    private var fi: Int = 0 // function index
+    private var sp: Int = 0 // stack pointer
+    private var fp: Int = 0 // frame pointer
+    private var pc: Int = 0 // program counter
 
     // the stack and frame structure
     //
@@ -62,9 +62,9 @@ class Instance(
         sp = fp + results
     }
 
-    private inline fun getLocal(i: Int) = stack[fp + i]
+    private fun getLocal(i: Int) = stack[fp + i]
 
-    private inline fun next() = f.body[pc++]
+    private fun next() = f.body[pc++]
 
     fun execute(fIndex: Int, locals: LongArray) {
         sp = 0
