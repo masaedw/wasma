@@ -1,4 +1,5 @@
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
 
 class VmTest : FunSpec({
     test("execute") {
@@ -10,10 +11,10 @@ class VmTest : FunSpec({
             """.decodeHex()
 
         val m = ModuleLoader.load(data)
-        //val target = Vm(m, longArrayOf(3, 5))
+        val target = Vm(m)
 
-        //target.execute()
+        target.execute(0, longArrayOf(3, 5))
 
-        //target.stack[0] shouldBe 8
+        target.stack[0] shouldBe 8
     }
 })

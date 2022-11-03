@@ -25,7 +25,7 @@ data class ModuleImportDescriptor(
     val kind: ImportExportKind,
 )
 
-class Module internal constructor(
+class Module(
     val exports: List<ModuleExportDescriptor>,
     val imports: List<ModuleImportDescriptor>,
     val types: List<Type>,
