@@ -16,6 +16,7 @@ enum class ImportExportKind(val code: Int) {
 data class ModuleExportDescriptor(
     val name: String,
     val kind: ImportExportKind,
+    val index: Int,
 )
 
 data class ModuleImportDescriptor(
@@ -27,15 +28,6 @@ data class ModuleImportDescriptor(
 class Module internal constructor(
     val exports: List<ModuleExportDescriptor>,
     val imports: List<ModuleImportDescriptor>,
+    val types: List<Type>,
     val functions: List<Function>,
 )
-
-class UnsupportedSectionException(
-    override val message: String? = null,
-    override val cause: Throwable? = null,
-) : RuntimeException(message, cause)
-
-class UnknownKindException(
-    override val message: String? = null,
-    override val cause: Throwable? = null,
-) : RuntimeException(message, cause)

@@ -6,6 +6,8 @@ class ModuleLoader(
 ) {
     private var exports: List<ModuleExportDescriptor>? = null
     private var imports: List<ModuleImportDescriptor>? = null
+    private var types: List<Type>? = null
+    private var functionTypes: List<Type.Function>? = null
     private var functions: List<Function>? = null
 
     private var pos = 0
@@ -56,52 +58,63 @@ class ModuleLoader(
         return Module(
             exports ?: emptyList(),
             imports ?: emptyList(),
-            functions ?: emptyList()
+            types ?: emptyList(),
+            functions ?: emptyList(),
         )
+    }
+
+    private fun readType(): Type {
+        return when (val type = read()) {
+            // func
+            0x60 -> {
+                val params = List(read()) { readType() }
+                val results = List(read()) { readType() }
+                Type.Function(params, results)
+            }
+            // i32
+            0x7f -> Type.I32
+            else -> throw UnknownTypeException("unknown type: $type")
+        }
     }
 
     private fun loadTypeSection() {
         val size = read()
-        skip(size)
-        // TODO: Not yet implemented
+        types = List(read()) { readType() }
     }
 
     private fun loadFunctionSection() {
         val size = read()
-        skip(size)
-        // TODO: Not yet implemented
+        val types = types ?: throw InvalidFormatException("missing type section")
+        functionTypes = List(read()) {
+            types[read()] as Type.Function
+        }
     }
 
     private fun loadExportSection() {
         val size = read()
-        val numExports = read()
-        exports = buildList {
-            for (i in 0 until numExports) {
-                val name = readString()
-                val kind = ImportExportKind.fromCode(read())
-                val index = read()
-                add(ModuleExportDescriptor(name, kind))
-            }
+        exports = List(read()) {
+            val name = readString()
+            val kind = ImportExportKind.fromCode(read())
+            val index = read()
+            ModuleExportDescriptor(name, kind, index)
         }
     }
 
     private fun loadCodeSection() {
         val size = read()
-        val numCodes = read()
-        functions = buildList {
-            for (i in 0 until numCodes) {
-                val bodySize = read()
+        val functionTypes = functionTypes ?: throw InvalidFormatException("missing function section")
 
-                val body = IntArray(bodySize)
+        functions = List(read()) {
+            val bodySize = read()
 
-                for (j in 0 until bodySize) {
-                    body[j] = read()
-                }
+            val body = IntArray(bodySize)
 
-                add(Function(body))
+            for (j in 0 until bodySize) {
+                body[j] = read()
             }
+
+            Function(body, functionTypes[it])
         }
-        // TODO: Not yet implemented
     }
 
     companion object {
