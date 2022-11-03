@@ -1,21 +1,9 @@
 package wasma
 
-class UnsupportedSectionException(
-    override val message: String? = null,
-    override val cause: Throwable? = null,
-) : RuntimeException(message, cause)
+class UnsupportedSectionException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause)
 
-class UnknownKindException(
-    override val message: String? = null,
-    override val cause: Throwable? = null,
-) : RuntimeException(message, cause)
+class UnknownKindException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause)
 
-class UnknownTypeException(
-    override val message: String? = null,
-    override val cause: Throwable? = null,
-) : RuntimeException(message, cause)
+class UnknownTypeException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause)
 
-class InvalidFormatException(
-    override val message: String? = null,
-    override val cause: Throwable? = null,
-) : RuntimeException(message, cause)
+class InvalidFormatException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause)
