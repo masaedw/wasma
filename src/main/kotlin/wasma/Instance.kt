@@ -2,6 +2,7 @@ package wasma
 
 class Instance(
     private val m: Module,
+    private val imports: Map<String, Map<String, (LongArray) -> LongArray>> = mapOf(),
 ) {
     val stack: LongArray = LongArray(1000)
 
@@ -23,9 +24,22 @@ class Instance(
     // parameters  <- fp
     //
 
-    private val f: Function
-        get() = m.functions[fi]
+    private fun mergeFunctions(): List<FunctionLike> {
+        val externals =
+            m.imports
+                .filter { it.kind == ImportExportKind.FUNCTION }
+                .map {
+                    val external = imports[it.module]?.get(it.name)
+                        ?: throw MissingImportException("missing import: ${it.module}.${it.name}")
+                    ExternalFunction(external, it.type as Type.Function)
+                }
+        return externals + m.functions
+    }
 
+    private val functions = mergeFunctions()
+
+    private val f: Function
+        get() = functions[fi] as Function
 
     private fun push(v: Long) {
         stack[sp++] = v
@@ -37,13 +51,25 @@ class Instance(
     private fun popI(): Int = pop().toInt()
 
     private fun call(fIndex: Int) {
-        sp += m.functions[fIndex].numLocals
-        pushI(fi)
-        pushI(pc)
-        pushI(fp)
-        fi = fIndex
-        pc = 1
-        fp = sp - 3 - f.offset
+        when (val f = functions[fIndex]) {
+            is Function -> {
+                sp += f.numLocals
+                pushI(fi)
+                pushI(pc)
+                pushI(fp)
+                fi = fIndex
+                pc = 1
+                fp = sp - 3 - f.offset
+            }
+
+            is ExternalFunction -> {
+                val size = f.type.params.size
+                sp -= size
+                val params = LongArray(size) { stack[sp + it] }
+                val result = f.f(params)
+                result.forEach { push(it) }
+            }
+        }
     }
 
     private fun ret() {

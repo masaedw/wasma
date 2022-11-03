@@ -7,3 +7,5 @@ class UnknownKindException(message: String? = null, cause: Throwable? = null) : 
 class UnknownTypeException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause)
 
 class InvalidFormatException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause)
+
+class MissingImportException(message: String? = null, cause: Throwable? = null) : RuntimeException(message, cause)
