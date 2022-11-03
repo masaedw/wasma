@@ -47,13 +47,13 @@ class ModuleLoader(
         skip(4) // version
 
         while (true) {
-            when (readOrEof()) {
+            when (val section = readOrEof()) {
                 1 -> types = readTypeSection()
                 3 -> functionTypes = readFunctionSection()
                 7 -> exports = readExportSection()
                 10 -> functions = readCodeSection()
                 -1 -> break
-                else -> throw UnsupportedSectionException()
+                else -> throw UnsupportedSectionException("unknown section: $section")
             }
         }
 
@@ -75,7 +75,7 @@ class ModuleLoader(
             }
             // i32
             0x7f -> Type.I32
-            else -> throw UnknownTypeException("unknown type: $type")
+            else -> throw UnknownTypeException("unknown type: $type (0x${type.toString(16)})")
         }
     }
 

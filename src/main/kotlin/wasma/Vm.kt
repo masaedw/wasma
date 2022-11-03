@@ -96,7 +96,7 @@ class Vm(
                 // i32.add
                 0x6a -> pushI(popI() + popI())
 
-                else -> throw UnsupportedOperationException("unknown insn: 0x${insn.toString(16)}")
+                else -> throw UnsupportedOperationException("unknown insn: $insn (0x${insn.toString(16)})")
             }
         }
     }
