@@ -36,7 +36,7 @@ class InstanceTest : FunSpec({
         target.stack[0] shouldBe 43
     }
 
-    context("import") {
+    test("call external functions") {
         // import.wasm
         val data = """
             00000000  00 61 73 6d 01 00 00 00  01 08 02 60 01 7f 00 60  |.asm.......`...`|
@@ -45,15 +45,36 @@ class InstanceTest : FunSpec({
             00000030  00 01 0a 08 01 06 00 41  0d 10 00 0b              |.......A....|
         """.decodeHexdump()
 
-        test("load") {
-            val m = Loader.load(data)
-            var passedValue: Long = 0
-            val consoleLog = { ps: LongArray -> passedValue = ps[0]; LongArray(0) }
-            val target = Instance(m, mapOf("console" to mapOf("log" to consoleLog)))
+        val m = Loader.load(data)
+        var passedValue: Long = 0
+        val consoleLog = { ps: LongArray -> passedValue = ps[0]; LongArray(0) }
+        val target = Instance(m, mapOf("console" to mapOf("log" to ImportObject.Function(consoleLog))))
 
-            target.execute(1, longArrayOf())
+        target.execute(1, longArrayOf())
 
-            passedValue shouldBe 13
-        }
+        passedValue shouldBe 13
+    }
+
+    test("write global") {
+        // global.wasm
+        val data = """
+                00000000  00 61 73 6d 01 00 00 00  01 08 02 60 00 01 7f 60  |.asm.......`...`|
+                00000010  00 00 02 0e 01 02 6a 73  06 67 6c 6f 62 61 6c 03  |......js.global.|
+                00000020  7f 01 03 03 02 00 01 07  19 02 09 67 65 74 47 6c  |...........getGl|
+                00000030  6f 62 61 6c 00 00 09 69  6e 63 47 6c 6f 62 61 6c  |obal...incGlobal|
+                00000040  00 01 0a 10 02 04 00 23  00 0b 09 00 23 00 41 01  |.......#....#.A.|
+                00000050  6a 24 00 0b                                       |j${'$'}..|
+            """.decodeHexdump()
+        val m = Loader.load(data)
+        val g = Global.MutableInt(32)
+        val target = Instance(m, mapOf("js" to mapOf("global" to ImportObject.Global(g))))
+
+        // getGlobal
+        target.execute(0, longArrayOf())
+        target.stack[0] shouldBe 32
+
+        // incGlobal
+        target.execute(1, longArrayOf())
+        g.v shouldBe 33
     }
 })

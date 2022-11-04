@@ -46,6 +46,7 @@ class LoaderTest : FunSpec({
         }
 
         test("import global") {
+            // global.wasm
             val data = """
                 00000000  00 61 73 6d 01 00 00 00  01 08 02 60 00 01 7f 60  |.asm.......`...`|
                 00000010  00 00 02 0e 01 02 6a 73  06 67 6c 6f 62 61 6c 03  |......js.global.|

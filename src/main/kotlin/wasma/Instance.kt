@@ -2,7 +2,7 @@ package wasma
 
 class Instance(
     private val m: Module,
-    private val imports: Map<String, Map<String, (LongArray) -> LongArray>> = mapOf(),
+    private val imports: Map<String, Map<String, ImportObject>> = mapOf(),
 ) {
     val stack: LongArray = LongArray(1000)
 
@@ -31,12 +31,33 @@ class Instance(
                 .map {
                     val external = imports[it.module]?.get(it.name)
                         ?: throw MissingImportException("missing import: ${it.module}.${it.name}")
-                    ExternalFunction(external, it.type as Type.Function)
+                    val f = (external as? ImportObject.Function)?.f
+                        ?: throw MissingImportException("invalid import: not a function: ${it.module}.${it.name}")
+                    ExternalFunction(f, it.type as Type.Function)
                 }
         return externals + m.functions
     }
 
     private val functions = mergeFunctions()
+
+
+    private fun setupGlobals(): List<Global> {
+        return m.imports
+            .filter { it.kind == ImportExportKind.GLOBAL }
+            .map {
+                val external = imports[it.module]?.get(it.name)
+                    ?: throw MissingImportException("missing import: ${it.module}.${it.name}")
+                val g = (external as? ImportObject.Global)?.g
+                    ?: throw MissingImportException("invalid import: not a global: ${it.module}.${it.name}")
+                if (it.mutability != g.mutability) {
+                    throw MissingImportException("invalid mutability: required ${it.mutability} but ${g.mutability}: ${it.module}.${it.name}")
+                }
+                g
+            }
+        // TODO: export and internal globals
+    }
+
+    private val globals = setupGlobals()
 
     private val f: Function
         get() = functions[fi] as Function
@@ -90,7 +111,15 @@ class Instance(
 
     private fun getLocal(i: Int) = stack[fp + i]
 
-    private fun next() = f.body[pc++]
+    private fun getGlobal(i: Int) = globals[i].value
+
+    private fun setGlobal(i: Int, v: Long) {
+        val g = globals[i] as? Global.MutableGlobal
+            ?: throw InvalidOperationException("try to write immutable global: $i")
+        g.value = v
+    }
+
+    fun next() = f.body[pc++]
 
     fun execute(fIndex: Int, locals: LongArray) {
         sp = 0
@@ -115,6 +144,12 @@ class Instance(
 
                 // local.get
                 0x20 -> push(getLocal(next()))
+
+                // global.get
+                0x23 -> push(getGlobal(next()))
+
+                // global.set
+                0x24 -> setGlobal(next(), pop())
 
                 // i32.const
                 0x41 -> pushI(next())
