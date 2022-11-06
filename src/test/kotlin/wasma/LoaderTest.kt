@@ -38,10 +38,10 @@ class LoaderTest : FunSpec({
             val actual = Loader.load(data)
 
             actual.imports shouldHaveSize 1
-            actual.imports[0] shouldBe ModuleImportDescriptor(
-                "console", "log", ImportExportKind.FUNCTION, Type.Function(
-                    listOf(Type.I32), listOf()
-                ), GlobalMutability.IMMUTABLE
+            actual.imports[0] shouldBe Import.Function(
+                "console",
+                "log",
+                Type.Function(listOf(Type.I32), listOf())
             )
         }
 
@@ -59,10 +59,9 @@ class LoaderTest : FunSpec({
             val actual = Loader.load(data)
 
             actual.imports shouldHaveSize 1
-            actual.imports[0] shouldBe ModuleImportDescriptor(
+            actual.imports[0] shouldBe Import.Global(
                 "js",
                 "global",
-                ImportExportKind.GLOBAL,
                 Type.I32,
                 GlobalMutability.MUTABLE
             )

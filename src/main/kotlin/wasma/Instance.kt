@@ -27,7 +27,7 @@ class Instance(
     private fun mergeFunctions(): List<FunctionLike> {
         val externals =
             m.imports
-                .filter { it.kind == ImportExportKind.FUNCTION }
+                .filterIsInstance<Import.Function>()
                 .map {
                     val external = imports[it.module]?.get(it.name)
                         ?: throw MissingImportException("missing import: ${it.module}.${it.name}")
@@ -43,7 +43,7 @@ class Instance(
 
     private fun setupGlobals(): List<Global> {
         return m.imports
-            .filter { it.kind == ImportExportKind.GLOBAL }
+            .filterIsInstance<Import.Global>()
             .map {
                 val external = imports[it.module]?.get(it.name)
                     ?: throw MissingImportException("missing import: ${it.module}.${it.name}")

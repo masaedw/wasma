@@ -7,7 +7,7 @@ class Loader(
     private val buffer: ByteArray,
 ) {
     private var exports: List<ModuleExportDescriptor>? = null
-    private var imports: List<ModuleImportDescriptor>? = null
+    private var imports: List<Import>? = null
     private var types: List<Type>? = null
     private var functionTypes: List<Type.Function>? = null
     private var functions: List<Function>? = null
@@ -94,30 +94,35 @@ class Loader(
 
     private fun readMutability() = GlobalMutability.fromCode(read())
 
-    private fun readImport(): ModuleImportDescriptor {
+    private fun readImport(): Import {
         val module = readString()
         val name = readString()
 
         return when (val kind = readKind()) {
             ImportExportKind.FUNCTION -> {
                 val type = getType(read())
-                ModuleImportDescriptor(module, name, kind, type, GlobalMutability.IMMUTABLE)
+                Import.Function(module, name, type)
             }
 
             ImportExportKind.GLOBAL -> {
                 val type = readType()
                 val mutability = readMutability()
-                ModuleImportDescriptor(module, name, kind, type, mutability)
+                Import.Global(module, name, type, mutability)
             }
 
-            ImportExportKind.MEMORY,
+            ImportExportKind.MEMORY -> {
+                val flags = read() // todo take care of flags
+                val initial = read()
+                Import.Memory(module, name, initial)
+            }
+
             ImportExportKind.TABLE,
             -> TODO()
         }
     }
 
 
-    private fun readImportSection(): List<ModuleImportDescriptor> {
+    private fun readImportSection(): List<Import> {
         read() // skip size
         return List(read()) { readImport() }
     }

@@ -34,17 +34,33 @@ data class ModuleExportDescriptor(
     val index: Int,
 )
 
-data class ModuleImportDescriptor(
-    val module: String,
-    val name: String,
-    val kind: ImportExportKind,
-    val type: Type,
-    val mutability: GlobalMutability,
-)
+sealed interface Import {
+    val module: String
+    val name: String
+
+    data class Function(
+        override val module: String,
+        override val name: String,
+        val type: Type,
+    ) : Import
+
+    data class Global(
+        override val module: String,
+        override val name: String,
+        val type: Type,
+        val mutability: GlobalMutability,
+    ) : Import
+
+    data class Memory(
+        override val module: String,
+        override val name: String,
+        val initial: Int,
+    ) : Import
+}
 
 class Module(
     val exports: List<ModuleExportDescriptor>,
-    val imports: List<ModuleImportDescriptor>,
+    val imports: List<Import>,
     val types: List<Type>,
     val functions: List<Function>,
 )
