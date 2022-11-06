@@ -11,6 +11,7 @@ class Loader(
     private var types: List<Type>? = null
     private var functionTypes: List<Type.Function>? = null
     private var functions: List<Function>? = null
+    private var data: List<Data>? = null
 
     private var pos = 0
 
@@ -47,6 +48,12 @@ class Loader(
         return str
     }
 
+    private fun readBytes(len: Int): ByteArray {
+        val buf = buffer.sliceArray(pos until pos + len)
+        pos += len
+        return buf
+    }
+
     fun load(): Module {
         skip(4) // magic
         skip(4) // version
@@ -58,6 +65,7 @@ class Loader(
                 3 -> functionTypes = readFunctionSection()
                 7 -> exports = readExportSection()
                 10 -> functions = readCodeSection()
+                11 -> data = readDataSection()
                 -1 -> break
                 else -> throw UnsupportedSectionException("unknown section: $section")
             }
@@ -68,6 +76,7 @@ class Loader(
             imports ?: emptyList(),
             types ?: emptyList(),
             functions ?: emptyList(),
+            data ?: emptyList()
         )
     }
 
@@ -147,6 +156,25 @@ class Loader(
             val body = IntArray(read()) { read() }
             Function(body, functionTypes[it])
         }
+    }
+
+    data class DataSegmentHeader(
+        val size: Int,
+    )
+
+    private fun readDataSegmentHeader(): DataSegmentHeader {
+        // TODO implement segment flags
+        // skip segment flags
+        while (read() != 0x0b) {
+            // do nothing
+        }
+        return DataSegmentHeader(size = read())
+    }
+
+    private fun readDataSection(): List<Data> {
+        read() // skip size
+        val headers = List(read()) { readDataSegmentHeader() }
+        return headers.map { Data(readBytes(it.size)) }
     }
 
     companion object {

@@ -63,4 +63,5 @@ class Module(
     val imports: List<Import>,
     val types: List<Type>,
     val functions: List<Function>,
+    val data: List<Data>,
 )
