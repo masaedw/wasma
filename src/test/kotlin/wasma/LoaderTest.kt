@@ -69,7 +69,7 @@ class LoaderTest : FunSpec({
 
         test("import memory") {
             // import.wasm
-            val data = """
+            val buf = """
                 00000000  00 61 73 6d 01 00 00 00  01 09 02 60 02 7f 7f 00  |.asm.......`....|
                 00000010  60 00 00 02 19 02 07 63  6f 6e 73 6f 6c 65 03 6c  |`......console.l|
                 00000020  6f 67 00 00 02 6a 73 03  6d 65 6d 02 00 01 03 02  |og...js.mem.....|
@@ -78,12 +78,16 @@ class LoaderTest : FunSpec({
                 00000050  00 0b 02 48 69                                    |...Hi|
             """.decodeHexdump()
 
-            val actual = Loader.load(data)
+            val actual = Loader.load(buf)
 
             actual.imports shouldHaveSize 2
             actual.imports[1] shouldBe Import.Memory("js", "mem", 1)
             actual.data shouldHaveSize 1
-            actual.data[0].data shouldBe "Hi".toByteArray()
+
+            val data = actual.data[0]
+            data.flags shouldBe 0
+            data.index shouldBe 0
+            data.data shouldBe "Hi".toByteArray()
         }
 
         test("export") {

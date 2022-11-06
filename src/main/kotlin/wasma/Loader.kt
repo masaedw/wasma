@@ -158,23 +158,25 @@ class Loader(
         }
     }
 
-    data class DataSegmentHeader(
-        val size: Int,
-    )
-
-    private fun readDataSegmentHeader(): DataSegmentHeader {
-        // TODO implement segment flags
-        // skip segment flags
-        while (read() != 0x0b) {
-            // do nothing
+    private fun readData(): Data {
+        val flags = read()
+        var index = 0
+        while (true) {
+            when (val insn = read()) {
+                // i32.const
+                0x41 -> index = read()
+                // end
+                0x0b -> break
+                else -> throw UnsupportedOperationException("failed to read data segment: $insn (0x${insn.toString(16)})")
+            }
         }
-        return DataSegmentHeader(size = read())
+        val size = read()
+        return Data(flags, index, readBytes(size))
     }
 
     private fun readDataSection(): List<Data> {
         read() // skip size
-        val headers = List(read()) { readDataSegmentHeader() }
-        return headers.map { Data(readBytes(it.size)) }
+        return List(read()) { readData() }
     }
 
     companion object {
