@@ -77,4 +77,35 @@ class InstanceTest : FunSpec({
         target.execute(1, longArrayOf())
         g.v shouldBe 33
     }
+
+    test("memory") {
+        // import.wasm
+        val buf = """
+                00000000  00 61 73 6d 01 00 00 00  01 09 02 60 02 7f 7f 00  |.asm.......`....|
+                00000010  60 00 00 02 19 02 07 63  6f 6e 73 6f 6c 65 03 6c  |`......console.l|
+                00000020  6f 67 00 00 02 6a 73 03  6d 65 6d 02 00 01 03 02  |og...js.mem.....|
+                00000030  01 01 07 0b 01 07 77 72  69 74 65 48 69 00 01 0a  |......writeHi...|
+                00000040  0a 01 08 00 41 00 41 02  10 00 0b 0b 08 01 00 41  |....A.A........A|
+                00000050  00 0b 02 48 69                                    |...Hi|
+            """.decodeHexdump()
+
+        val m = Loader.load(buf)
+        val memory = Memory(1, 1)
+        var stringValue: String? = null
+        val consoleLog =
+            { ps: LongArray -> stringValue = String(memory.buffer, ps[0].toInt(), ps[1].toInt()); LongArray(0) }
+
+        val target = Instance(
+            m,
+            mapOf(
+                "js" to mapOf("mem" to ImportObject.Memory(memory)),
+                "console" to mapOf("log" to ImportObject.Function(consoleLog))
+            )
+        )
+
+        memory.buffer.slice(0..1) shouldBe "Hi".toByteArray()
+        // writeHi
+        target.execute(1, longArrayOf())
+        stringValue shouldBe "Hi"
+    }
 })

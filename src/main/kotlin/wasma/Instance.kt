@@ -40,7 +40,6 @@ class Instance(
 
     private val functions = mergeFunctions()
 
-
     private fun setupGlobals(): List<Global> {
         return m.imports
             .filterIsInstance<Import.Global>()
@@ -58,6 +57,31 @@ class Instance(
     }
 
     private val globals = setupGlobals()
+
+    private fun setupMemories(): List<Memory> {
+        val memories = m.imports
+            .filterIsInstance<Import.Memory>()
+            .map {
+                val external = imports[it.module]?.get(it.name)
+                    ?: throw MissingImportException("missing import: ${it.module}.${it.name}")
+
+                val m = (external as? ImportObject.Memory)?.m
+                    ?: throw MissingImportException("invalid import: not a memory: ${it.module}.${it.name}")
+
+                if (m.initial < it.initial)
+                    throw MissingImportException("too small memory: ${it.module}.${it.name}; required ${it.initial} but ${m.initial}")
+
+                m
+            }
+
+        m.data.forEach {
+            System.arraycopy(it.data, 0, memories[it.index].buffer, it.index, it.data.size)
+        }
+
+        return memories
+    }
+
+    private val memories = setupMemories()
 
     private val f: Function
         get() = functions[fi] as Function
