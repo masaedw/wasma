@@ -129,5 +129,20 @@ class LoaderTest : FunSpec({
             actual.functions[1].type shouldBe Type.Function(listOf(), listOf(Type.I32))
             actual.functions[1].numLocals shouldBe 0
         }
+
+        test("table") {
+            // wasm-table.wasm
+            val data = """
+                00000000  00 61 73 6d 01 00 00 00  01 0a 02 60 00 01 7f 60  |.asm.......`...`|
+                00000010  01 7f 01 7f 03 04 03 00  00 01 04 04 01 70 00 02  |.............p..|
+                00000020  07 0f 01 0b 63 61 6c 6c  42 79 49 6e 64 65 78 00  |....callByIndex.|
+                00000030  02 09 08 01 00 41 00 0b  02 00 01 0a 13 03 04 00  |.....A..........|
+                00000040  41 2a 0b 04 00 41 0d 0b  07 00 20 00 11 00 00 0b  |A*...A.... .....|
+            """.decodeHexdump()
+
+            val actual = Loader.load(data)
+
+            actual.table shouldBe listOf(0, 1)
+        }
     }
 })

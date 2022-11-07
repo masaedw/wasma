@@ -10,6 +10,7 @@ class Loader(
     private var imports: List<Import>? = null
     private var types: List<Type>? = null
     private var functionTypes: List<Type.Function>? = null
+    private var table: Table? = null
     private var functions: List<Function>? = null
     private var data: List<Data>? = null
 
@@ -63,7 +64,9 @@ class Loader(
                 1 -> types = readTypeSection()
                 2 -> imports = readImportSection()
                 3 -> functionTypes = readFunctionSection()
+                4 -> table = readTable()
                 7 -> exports = readExportSection()
+                9 -> readElem()
                 10 -> functions = readCodeSection()
                 11 -> data = readDataSection()
                 -1 -> break
@@ -76,6 +79,7 @@ class Loader(
             imports ?: emptyList(),
             types ?: emptyList(),
             functions ?: emptyList(),
+            table?.elems ?: emptyList(),
             data ?: emptyList()
         )
     }
@@ -141,12 +145,65 @@ class Loader(
         return List(read()) { getType(read()) as Type.Function }
     }
 
+    private fun readTable(): Table {
+        read() // skip size
+        if (read() != 1) // num tables
+            throw InvalidFormatException("table size should be 1 for now")
+
+        when (val type = read()) {
+            0x70 -> {
+                read() // flags
+                val initial = read()
+                return Table(MutableList(initial) { -1 }) // TODO: implement call on throw
+            }
+
+            else -> throw InvalidFormatException("unknown table type: $type (0x${type.toString(16)})")
+        }
+    }
+
     private fun readExport() =
         ModuleExportDescriptor(readString(), readKind(), read())
 
     private fun readExportSection(): List<ModuleExportDescriptor> {
         read() // skip size
         return List(read()) { readExport() }
+    }
+
+    data class SegmentHeader(
+        val flags: Int,
+        val index: Int,
+    )
+
+    private fun readSegmentHeader(): SegmentHeader {
+        val flags = read()
+        var index = 0
+        while (true) {
+            when (val insn = read()) {
+                // i32.const
+                0x41 -> index = read()
+                // end
+                0x0b -> break
+                else -> throw UnsupportedOperationException("failed to read segment header: $insn (0x${insn.toString(16)})")
+            }
+        }
+        return SegmentHeader(flags, index)
+    }
+
+    private fun readElem() {
+        read() // skip size
+        val numSegments = read()
+        if (numSegments != 1)
+            throw InvalidFormatException("num of elem segments must be 1")
+
+        val header = readSegmentHeader()
+        if (header.flags != 0)
+            throw InvalidFormatException("elem section segment header must be 0")
+
+        val size = read()
+        val table = table ?: throw InvalidFormatException("missing table section")
+        (0 until size).forEach {
+            table.elems[header.index + it] = read()
+        }
     }
 
     private fun readCodeSection(): List<Function> {
@@ -159,19 +216,9 @@ class Loader(
     }
 
     private fun readData(): Data {
-        val flags = read()
-        var index = 0
-        while (true) {
-            when (val insn = read()) {
-                // i32.const
-                0x41 -> index = read()
-                // end
-                0x0b -> break
-                else -> throw UnsupportedOperationException("failed to read data segment: $insn (0x${insn.toString(16)})")
-            }
-        }
+        val header = readSegmentHeader()
         val size = read()
-        return Data(flags, index, readBytes(size))
+        return Data(header.flags, header.index, readBytes(size))
     }
 
     private fun readDataSection(): List<Data> {
