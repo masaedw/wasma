@@ -108,4 +108,27 @@ class InstanceTest : FunSpec({
         target.execute(1, longArrayOf())
         stringValue shouldBe "Hi"
     }
+
+    test("table") {
+        // wasm-table.wasm
+        val data = """
+                00000000  00 61 73 6d 01 00 00 00  01 0a 02 60 00 01 7f 60  |.asm.......`...`|
+                00000010  01 7f 01 7f 03 04 03 00  00 01 04 04 01 70 00 02  |.............p..|
+                00000020  07 0f 01 0b 63 61 6c 6c  42 79 49 6e 64 65 78 00  |....callByIndex.|
+                00000030  02 09 08 01 00 41 00 0b  02 00 01 0a 13 03 04 00  |.....A..........|
+                00000040  41 2a 0b 04 00 41 0d 0b  07 00 20 00 11 00 00 0b  |A*...A.... .....|
+            """.decodeHexdump()
+
+        val m = Loader.load(data)
+
+        val target = Instance(m)
+
+        // call $f1
+        target.execute(2, longArrayOf(0))
+        target.stack[0] shouldBe 42
+
+        // call $f2
+        target.execute(2, longArrayOf(1))
+        target.stack[0] shouldBe 13
+    }
 })

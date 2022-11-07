@@ -117,6 +117,19 @@ class Instance(
         }
     }
 
+    private fun callIndirect(index: Int, signature: Int, table: Int) {
+        if (table != 0)
+            throw InvalidOperationException("call_indirect: table index must be 0")
+
+        val ref = m.table.getOrNull(index)
+            ?: throw InvalidOperationException("call_indirect: out of bounds table access, table size: ${m.table.size} operand: $index")
+
+        if (functions[ref].type != m.types[signature])
+            throw InvalidOperationException("call_indirect: different signature type, operand: $signature(${m.types[signature]}) but actual ${functions[ref].type}")
+
+        call(ref)
+    }
+
     private fun ret() {
         val offset = f.offset
         val results = f.type.results.size
@@ -165,6 +178,9 @@ class Instance(
                 }
                 // call
                 0x10 -> call(next())
+
+                // call_indirect
+                0x11 -> callIndirect(popI(), next(), next())
 
                 // local.get
                 0x20 -> push(getLocal(next()))

@@ -1,3 +1,5 @@
 package wasma
 
-sealed interface FunctionLike
+sealed interface FunctionLike {
+    val type: Type.Function
+}
