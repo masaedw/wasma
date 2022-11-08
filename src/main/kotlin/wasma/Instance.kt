@@ -7,7 +7,7 @@ class Instance(
     val stack: LongArray = LongArray(1000)
 
     // registers
-    private var fi: Int = 0 // function index
+    private var fi: Int = -1 // function index
     private var sp: Int = 0 // stack pointer
     private var fp: Int = 0 // frame pointer
     private var pc: Int = 0 // program counter
@@ -158,23 +158,23 @@ class Instance(
 
     fun next() = f.body[pc++]
 
-    fun execute(fIndex: Int, locals: LongArray) {
-        sp = 0
-        fp = 0
-        pc = 1
-        fi = fIndex
+    fun execute(fIndex: Int, locals: LongArray): LongArray {
+        val requiredSize = functions[fIndex].type.params.size
+        if (requiredSize != locals.size) {
+            throw InvalidOperationException("different num of parameters: required $requiredSize but actual ${locals.size}")
+        }
+
         locals.forEach { push(it) }
-        sp += f.numLocals
-        pushI(-1) // fi; return to outside vm
-        pushI(0) // pc
-        pushI(0)  // fp
+        call(fIndex)
 
         while (true) {
             when (val insn = next()) {
                 // end
                 0x0b -> {
                     ret()
-                    if (fi == -1) return
+                    if (fi == -1) {
+                        return LongArray(functions[fIndex].type.results.size) { pop() }
+                    }
                 }
                 // call
                 0x10 -> call(next())
@@ -197,7 +197,7 @@ class Instance(
                 // i32.add
                 0x6a -> pushI(popI() + popI())
 
-                else -> throw UnsupportedOperationException("unknown insn: $insn (0x${insn.toString(16)})")
+                else -> throw InvalidOperationException("unknown insn: $insn (0x${insn.toString(16)})")
             }
         }
     }

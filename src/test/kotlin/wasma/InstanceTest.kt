@@ -15,9 +15,9 @@ class InstanceTest : FunSpec({
         val m = Loader.load(data)
         val target = Instance(m)
 
-        target.execute(0, longArrayOf(3, 5))
+        val result = target.execute(0, longArrayOf(3, 5))
 
-        target.stack[0] shouldBe 8
+        result[0] shouldBe 8
     }
 
     test("call") {
@@ -32,8 +32,8 @@ class InstanceTest : FunSpec({
         val m = Loader.load(data)
         val target = Instance(m)
 
-        target.execute(1, longArrayOf())
-        target.stack[0] shouldBe 43
+        val result = target.execute(1, longArrayOf())
+        result[0] shouldBe 43
     }
 
     test("call external functions") {
@@ -50,8 +50,9 @@ class InstanceTest : FunSpec({
         val consoleLog = { ps: LongArray -> passedValue = ps[0]; LongArray(0) }
         val target = Instance(m, mapOf("console" to mapOf("log" to ImportObject.Function(consoleLog))))
 
-        target.execute(1, longArrayOf())
+        val result = target.execute(1, longArrayOf())
 
+        result.size shouldBe 0
         passedValue shouldBe 13
     }
 
@@ -70,11 +71,12 @@ class InstanceTest : FunSpec({
         val target = Instance(m, mapOf("js" to mapOf("global" to ImportObject.Global(g))))
 
         // getGlobal
-        target.execute(0, longArrayOf())
-        target.stack[0] shouldBe 32
+        val result1 = target.execute(0, longArrayOf())
+        result1[0] shouldBe 32
 
         // incGlobal
-        target.execute(1, longArrayOf())
+        val result2 = target.execute(1, longArrayOf())
+        result2.size shouldBe 0
         g.v shouldBe 33
     }
 
@@ -105,7 +107,8 @@ class InstanceTest : FunSpec({
 
         memory.buffer.slice(0..1) shouldBe "Hi".toByteArray()
         // writeHi
-        target.execute(1, longArrayOf())
+        val result = target.execute(1, longArrayOf())
+        result.size shouldBe 0
         stringValue shouldBe "Hi"
     }
 
@@ -124,11 +127,11 @@ class InstanceTest : FunSpec({
         val target = Instance(m)
 
         // call $f1
-        target.execute(2, longArrayOf(0))
-        target.stack[0] shouldBe 42
+        val result1 = target.execute(2, longArrayOf(0))
+        result1[0] shouldBe 42
 
         // call $f2
-        target.execute(2, longArrayOf(1))
-        target.stack[0] shouldBe 13
+        val result2 = target.execute(2, longArrayOf(1))
+        result2[0] shouldBe 13
     }
 })
