@@ -86,7 +86,7 @@ class Instance(
     private fun setupTable(): Table {
         // TODO: import
         val list = m.table
-            .map { { params: LongArray -> execute(it, params) } }
+            .map { this to it }
             .toMutableList()
         return Table(list)
     }
@@ -131,14 +131,14 @@ class Instance(
         if (tableIndex != 0)
             throw InvalidOperationException("call_indirect: table index must be 0")
 
-        val f = table.elems.getOrNull(index)
+        val (instance, fIndex) = table.elems.getOrNull(index)
             ?: throw InvalidOperationException("call_indirect: out of bounds table access, table size: ${table.elems.size} operand: $index")
 
         val type = m.types[signature] as Type.Function
         val size = type.params.size
         sp -= size
         val params = LongArray(size) { stack[sp + it] }
-        val result = f(params)
+        val result = instance.execute(fIndex, params)
         if (result.size != type.results.size) {
             throw InvalidOperationException("call_indirect: different num of return values")
         }
