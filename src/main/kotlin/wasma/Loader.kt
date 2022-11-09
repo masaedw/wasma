@@ -10,7 +10,7 @@ class Loader(
     private var imports: List<Import>? = null
     private var types: List<Type>? = null
     private var functionTypes: List<Type.Function>? = null
-    private var table: Table? = null
+    private var table: MutableList<Int>? = null
     private var functions: List<Function>? = null
     private var data: List<Data>? = null
 
@@ -79,7 +79,7 @@ class Loader(
             imports ?: emptyList(),
             types ?: emptyList(),
             functions ?: emptyList(),
-            table?.elems ?: emptyList(),
+            table ?: emptyList(),
             data ?: emptyList()
         )
     }
@@ -145,7 +145,7 @@ class Loader(
         return List(read()) { getType(read()) as Type.Function }
     }
 
-    private fun readTable(): Table {
+    private fun readTable(): MutableList<Int> {
         read() // skip size
         if (read() != 1) // num tables
             throw InvalidFormatException("table size should be 1 for now")
@@ -154,7 +154,7 @@ class Loader(
             0x70 -> {
                 read() // flags
                 val initial = read()
-                return Table(MutableList(initial) { -1 }) // TODO: implement call on throw
+                return MutableList(initial) { -1 } // TODO: implement call on throw
             }
 
             else -> throw InvalidFormatException("unknown table type: $type (0x${type.toString(16)})")
@@ -202,7 +202,7 @@ class Loader(
         val size = read()
         val table = table ?: throw InvalidFormatException("missing table section")
         (0 until size).forEach {
-            table.elems[header.index + it] = read()
+            table[header.index + it] = read()
         }
     }
 

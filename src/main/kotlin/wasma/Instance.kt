@@ -4,7 +4,7 @@ class Instance(
     private val m: Module,
     private val imports: Map<String, Map<String, ImportObject>> = mapOf(),
 ) {
-    val stack: LongArray = LongArray(1000)
+    val stack: LongArray = LongArray(1024 * 8)
 
     // registers
     private var fi: Int = -1 // function index
@@ -83,6 +83,16 @@ class Instance(
 
     private val memories = setupMemories()
 
+    private fun setupTable(): Table {
+        // TODO: import
+        val list = m.table
+            .map { { params: LongArray -> execute(it, params) } }
+            .toMutableList()
+        return Table(list)
+    }
+
+    private val table = setupTable()
+
     private val f: Function
         get() = functions[fi] as Function
 
@@ -117,17 +127,22 @@ class Instance(
         }
     }
 
-    private fun callIndirect(index: Int, signature: Int, table: Int) {
-        if (table != 0)
+    private fun callIndirect(index: Int, signature: Int, tableIndex: Int) {
+        if (tableIndex != 0)
             throw InvalidOperationException("call_indirect: table index must be 0")
 
-        val ref = m.table.getOrNull(index)
-            ?: throw InvalidOperationException("call_indirect: out of bounds table access, table size: ${m.table.size} operand: $index")
+        val f = table.elems.getOrNull(index)
+            ?: throw InvalidOperationException("call_indirect: out of bounds table access, table size: ${table.elems.size} operand: $index")
 
-        if (functions[ref].type != m.types[signature])
-            throw InvalidOperationException("call_indirect: different signature type, operand: $signature(${m.types[signature]}) but actual ${functions[ref].type}")
-
-        call(ref)
+        val type = m.types[signature] as Type.Function
+        val size = type.params.size
+        sp -= size
+        val params = LongArray(size) { stack[sp + it] }
+        val result = f(params)
+        if (result.size != type.results.size) {
+            throw InvalidOperationException("call_indirect: different num of return values")
+        }
+        result.forEach { push(it) }
     }
 
     private fun ret() {
@@ -165,6 +180,9 @@ class Instance(
         }
 
         locals.forEach { push(it) }
+        // callIndirectで呼ばれる場合にはこの時点でfiが-1ではないので復帰先を退避しておく
+        val preFi = fi
+        fi = -1
         call(fIndex)
 
         while (true) {
@@ -173,6 +191,7 @@ class Instance(
                 0x0b -> {
                     ret()
                     if (fi == -1) {
+                        fi = preFi
                         return LongArray(functions[fIndex].type.results.size) { pop() }
                     }
                 }
