@@ -56,6 +56,12 @@ sealed interface Import {
         override val name: String,
         val initial: Int,
     ) : Import
+
+    data class Table(
+        override val module: String,
+        override val name: String,
+        val initial: Int,
+    ) : Import
 }
 
 class Module(

@@ -49,7 +49,7 @@ class Instance(
                 val g = (external as? ImportObject.Global)?.g
                     ?: throw MissingImportException("invalid import: not a global: ${it.module}.${it.name}")
                 if (it.mutability != g.mutability) {
-                    throw MissingImportException("invalid mutability: required ${it.mutability} but ${g.mutability}: ${it.module}.${it.name}")
+                    throw MissingImportException("invalid mutability: required ${it.mutability} but actual ${g.mutability}: ${it.module}.${it.name}")
                 }
                 g
             }
@@ -69,7 +69,7 @@ class Instance(
                     ?: throw MissingImportException("invalid import: not a memory: ${it.module}.${it.name}")
 
                 if (m.initial < it.initial)
-                    throw MissingImportException("too small memory: ${it.module}.${it.name}; required ${it.initial} but ${m.initial}")
+                    throw MissingImportException("too small memory: ${it.module}.${it.name}; required ${it.initial} but actual ${m.initial}")
 
                 m
             }
@@ -84,11 +84,31 @@ class Instance(
     private val memories = setupMemories()
 
     private fun setupTable(): Table {
-        // TODO: import
-        val list = m.table
-            .map { this to it }
-            .toMutableList()
-        return Table(list)
+        val t = m.imports
+            .filterIsInstance<Import.Table>()
+            .map {
+                val external = imports[it.module]?.get(it.name)
+                    ?: throw MissingImportException("missing import: ${it.module}.${it.name}")
+
+                val t = (external as? ImportObject.Table)?.t
+                    ?: throw MissingImportException("invalid import: not a table: ${it.module}.${it.name}")
+
+                if (t.elems.size < it.initial)
+                    throw MissingImportException("too small table: ${it.module}.${it.name}; required ${it.initial} but actual ${t.elems.size}")
+
+                t
+            }.firstOrNull()
+
+        val pairs = m.table.map { this to it }
+
+        if (t != null) {
+            pairs.forEachIndexed { index, pair ->
+                t.elems[index] = pair
+            }
+            return t
+        }
+
+        return Table(MutableList(pairs.size) { pairs[it] })
     }
 
     private val table = setupTable()
