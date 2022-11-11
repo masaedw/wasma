@@ -59,6 +59,7 @@ class Instance(
     private val globals = setupGlobals()
 
     private fun setupMemories(): List<Memory> {
+        // TODO: メモリは1つ
         val memories = m.imports
             .filterIsInstance<Import.Memory>()
             .map {
@@ -99,16 +100,20 @@ class Instance(
                 t
             }.firstOrNull()
 
-        val pairs = m.table.map { this to it }
+        val pairs = m.elems.map { this to it }
 
-        if (t != null) {
-            pairs.forEachIndexed { index, pair ->
-                t.elems[index] = pair
-            }
-            return t
+        val table = if (t == null) {
+            val initial = m.table ?: 0
+            Table(MutableList(initial) { null })
+        } else {
+            t
         }
 
-        return Table(MutableList(pairs.size) { pairs[it] })
+        pairs.forEachIndexed { index, pair ->
+            table.elems[index] = pair
+        }
+
+        return table
     }
 
     private val table = setupTable()
@@ -191,6 +196,18 @@ class Instance(
         g.value = v
     }
 
+    private fun getMemoryI(alignment: Int, offset: Int) {
+        val address = popI()
+        val data = memories[0].byteBuffer.getInt(address + offset)
+        pushI(data)
+    }
+
+    private fun setMemoryI(alignment: Int, offset: Int) {
+        val value = popI()
+        val address = popI()
+        memories[0].byteBuffer.putInt(address + offset, value)
+    }
+
     fun next() = f.body[pc++]
 
     fun execute(fIndex: Int, locals: LongArray): LongArray {
@@ -229,6 +246,12 @@ class Instance(
 
                 // global.set
                 0x24 -> setGlobal(next(), pop())
+
+                // i32.load
+                0x28 -> getMemoryI(next(), next())
+
+                // i32.store
+                0x36 -> setMemoryI(next(), next())
 
                 // i32.const
                 0x41 -> pushI(next())

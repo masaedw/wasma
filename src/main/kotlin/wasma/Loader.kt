@@ -10,7 +10,8 @@ class Loader(
     private var imports: List<Import>? = null
     private var types: List<Type>? = null
     private var functionTypes: List<Type.Function>? = null
-    private var table: MutableList<Int>? = null
+    private var table: Int? = null
+    private var elems: List<Int>? = null
     private var functions: List<Function>? = null
     private var data: List<Data>? = null
 
@@ -66,7 +67,7 @@ class Loader(
                 3 -> functionTypes = readFunctionSection()
                 4 -> table = readTable()
                 7 -> exports = readExportSection()
-                9 -> readElem()
+                9 -> elems = readElem()
                 10 -> functions = readCodeSection()
                 11 -> data = readDataSection()
                 -1 -> break
@@ -79,7 +80,8 @@ class Loader(
             imports ?: emptyList(),
             types ?: emptyList(),
             functions ?: emptyList(),
-            table ?: emptyList(),
+            table,
+            elems ?: emptyList(),
             data ?: emptyList()
         )
     }
@@ -117,10 +119,18 @@ class Loader(
                 Import.Function(module, name, type)
             }
 
-            ImportExportKind.GLOBAL -> {
-                val type = readType()
-                val mutability = readMutability()
-                Import.Global(module, name, type, mutability)
+            ImportExportKind.TABLE -> {
+                when (val refType = read()) {
+                    // funcref
+                    0x70 -> {
+                        val flags = read()
+                        val initial = read()
+                        Import.Table(module, name, initial)
+                    }
+
+                    else -> throw InvalidFormatException("import table: not supported type $refType")
+                }
+
             }
 
             ImportExportKind.MEMORY -> {
@@ -129,8 +139,11 @@ class Loader(
                 Import.Memory(module, name, initial)
             }
 
-            ImportExportKind.TABLE,
-            -> TODO()
+            ImportExportKind.GLOBAL -> {
+                val type = readType()
+                val mutability = readMutability()
+                Import.Global(module, name, type, mutability)
+            }
         }
     }
 
@@ -145,16 +158,16 @@ class Loader(
         return List(read()) { getType(read()) as Type.Function }
     }
 
-    private fun readTable(): MutableList<Int> {
+    private fun readTable(): Int {
         read() // skip size
         if (read() != 1) // num tables
             throw InvalidFormatException("table size should be 1 for now")
 
         when (val type = read()) {
+            // funcref
             0x70 -> {
                 read() // flags
-                val initial = read()
-                return MutableList(initial) { -1 } // TODO: implement call on throw
+                return read() // initial
             }
 
             else -> throw InvalidFormatException("unknown table type: $type (0x${type.toString(16)})")
@@ -189,7 +202,7 @@ class Loader(
         return SegmentHeader(flags, index)
     }
 
-    private fun readElem() {
+    private fun readElem(): List<Int> {
         read() // skip size
         val numSegments = read()
         if (numSegments != 1)
@@ -200,9 +213,10 @@ class Loader(
             throw InvalidFormatException("elem section segment header must be 0")
 
         val size = read()
-        val table = table ?: throw InvalidFormatException("missing table section")
-        (0 until size).forEach {
-            table[header.index + it] = read()
+        return MutableList(size + header.index) { -1 }.apply {
+            (0 until size).forEach {
+                set(header.index + it, read())
+            }
         }
     }
 

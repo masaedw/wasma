@@ -69,6 +69,7 @@ class Module(
     val imports: List<Import>,
     val types: List<Type>,
     val functions: List<Function>,
-    val table: List<Int>,
+    val table: Int?,
+    val elems: List<Int>,
     val data: List<Data>,
 )

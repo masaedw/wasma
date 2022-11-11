@@ -134,4 +134,36 @@ class InstanceTest : FunSpec({
         val result2 = target.execute(2, longArrayOf(1))
         result2[0] shouldBe 13
     }
+
+    test("shared memory and table") {
+        // shared0.wasm
+        val shared0 = """
+            00000000  00 61 73 6d 01 00 00 00  01 05 01 60 00 01 7f 02  |.asm.......`....|
+            00000010  1b 02 02 6a 73 06 6d 65  6d 6f 72 79 02 00 01 02  |...js.memory....|
+            00000020  6a 73 05 74 61 62 6c 65  01 70 00 01 03 02 01 00  |js.table.p......|
+            00000030  09 07 01 00 41 00 0b 01  00 0a 09 01 07 00 41 00  |....A.........A.|
+            00000040  28 02 00 0b                                       |(...|
+        """.decodeHexdump()
+
+        val shared1 = """
+            00000000  00 61 73 6d 01 00 00 00  01 05 01 60 00 01 7f 02  |.asm.......`....|
+            00000010  1b 02 02 6a 73 06 6d 65  6d 6f 72 79 02 00 01 02  |...js.memory....|
+            00000020  6a 73 05 74 61 62 6c 65  01 70 00 01 03 02 01 00  |js.table.p......|
+            00000030  07 08 01 04 64 6f 49 74  00 00 0a 10 01 0e 00 41  |....doIt.......A|
+            00000040  00 41 2a 36 02 00 41 00  11 00 00 0b              |.A*6..A.....|
+        """.decodeHexdump()
+
+        val imports = mapOf(
+            "js" to mapOf(
+                "memory" to ImportObject.Memory(Memory(1, 1)),
+                "table" to ImportObject.Table(Table(1))
+            )
+        )
+
+        val instance0 = Instance(Loader.load(shared0), imports)
+        val instance1 = Instance(Loader.load(shared1), imports)
+
+        val result = instance1.execute(0, longArrayOf())
+        result[0] shouldBe 42
+    }
 })

@@ -142,7 +142,8 @@ class LoaderTest : FunSpec({
 
             val actual = Loader.load(data)
 
-            actual.table shouldBe listOf(0, 1)
+            actual.table shouldBe 2
+            actual.elems shouldBe listOf(0, 1)
         }
     }
 })
