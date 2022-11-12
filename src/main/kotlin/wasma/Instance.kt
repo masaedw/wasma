@@ -58,9 +58,8 @@ class Instance(
 
     private val globals = setupGlobals()
 
-    private fun setupMemories(): List<Memory> {
-        // TODO: メモリは1つ
-        val memories = m.imports
+    private fun setupMemory(): Memory {
+        val import = m.imports
             .filterIsInstance<Import.Memory>()
             .map {
                 val external = imports[it.module]?.get(it.name)
@@ -73,16 +72,19 @@ class Instance(
                     throw MissingImportException("too small memory: ${it.module}.${it.name}; required ${it.initial} but actual ${m.initial}")
 
                 m
+            }.firstOrNull()
+
+        return if (import == null) {
+            Memory(0, 0)
+        } else {
+            m.data.forEach {
+                System.arraycopy(it.data, 0, import.buffer, it.index, it.data.size)
             }
-
-        m.data.forEach {
-            System.arraycopy(it.data, 0, memories[it.index].buffer, it.index, it.data.size)
+            import
         }
-
-        return memories
     }
 
-    private val memories = setupMemories()
+    private val memory = setupMemory()
 
     private fun setupTable(): Table {
         val t = m.imports
@@ -198,14 +200,14 @@ class Instance(
 
     private fun getMemoryI(alignment: Int, offset: Int) {
         val address = popI()
-        val data = memories[0].byteBuffer.getInt(address + offset)
+        val data = memory.byteBuffer.getInt(address + offset)
         pushI(data)
     }
 
     private fun setMemoryI(alignment: Int, offset: Int) {
         val value = popI()
         val address = popI()
-        memories[0].byteBuffer.putInt(address + offset, value)
+        memory.byteBuffer.putInt(address + offset, value)
     }
 
     fun next() = f.body[pc++]
